@@ -48,13 +48,14 @@ class GeoJSONDict:
     def setPlace(self,place):
         (self.__masterDataFrame['place']).append(place)
 
-    def setTime(self,time):
-        if time == None:
-            time = (int(t.time()))*1000
-        epochTS = float(time) / 1000
-        dtObj = dt.datetime.fromtimestamp(int(epochTS))#Not sure what would be the impact of missing tz >>> Todo
-        #(self.__masterDataFrame['time']).append("{}-{}-{}".format(dtObj.year,dtObj.day,dtObj.month))
-        (self.__masterDataFrame['time']).append(dtObj);
+    def setTime(self,timeObj):
+        if timeObj == None:
+            dtObj = dt.datetime.fromtimestamp(int(t.time()))
+        else:
+            epochTS = float(timeObj) / 1000
+            dtObj = dt.datetime.fromtimestamp(int(epochTS))#Not sure what would be the impact of missing tz >>> Todo
+            (self.__masterDataFrame['time']).append(dtObj);
+            #print(dtObj)
 
     def setDepth(self,depth):
         (self.__masterDataFrame['depth']).append(depth)
@@ -101,13 +102,18 @@ def processGeometry(geometry,geoJSONDict):
 
 #To handle null values in GeoJSON response
 null = "null"
+MAGNITUDE_LCL = 3
 '''
 URL for accessing USGS data Services
-#For now I am keeping the URL hardcoded but this can be dynamically creatd using datetime object
+For now I am keeping the URL hardcoded but this can be dynamically creatd using datetime object
+starttime yyyy-mm-dd endtime yyyy-mm-dd
+minmagnitude >= MAGNITUDE_LCL
 '''
-USGS_WS_API_URL = "http://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson&starttime=2016-01-01&endtime=2016-01-12"
+urldtObj = dt.datetime.fromtimestamp(int(t.time()))
 
-
+USGS_WS_API_URL = "https://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson&starttime=2016-01-01&endtime={}-{}-{}&minmagnitude={}".format(urldtObj.year,urldtObj.month,urldtObj.day,MAGNITUDE_LCL)
+print("In finally block. Program Started at {} ".format(dt.datetime.fromtimestamp(t.time())))
+print("REST API URL is {}".format(USGS_WS_API_URL))
 #Global Variables
 #constants
 #Todo:can be configured through properties file or db ??? for better maintainability
@@ -137,12 +143,13 @@ geoJSONDict = GeoJSONDict()
 try:
     GeoJSONResponse = requests.get(USGS_WS_API_URL)
     #Checking whether GeoJSONResponse is Dictionary object or not
-    '''
+    """
     key ==> features, type ==> <class 'list'>
     key ==> type, type ==> <class 'str'>
     key ==> metadata, type ==> <class 'dict'>
     key ==> bbox, type ==> <class 'list'>
-    '''
+    """
+
     if isinstance(GeoJSONResponse.json(), dict):
         keys = GeoJSONResponse.json().keys()
     for key in keys:
@@ -175,15 +182,49 @@ try:
 except Exception as exception:
     print("Something went wrong while retrieving data from USGS Site. Error is {}".format(exception))
 else:
-    pass
     #Placeholder for code to generate plots using matplotlib.pyplot with by using dataframes and Pandas (if possible)
     df = pd.DataFrame(geoJSONDict.getMasterDataFrame())
-    df.set_index("id",inplace='true')#setting dataframe index to "id" column
-    style.use('classic')
-    (df.head(10))['mag'].plot()#Generating plot for first 100 'mag' data values. In the similar way plat can be generated for other columns also.
-    plt.ylabel("Magnitude")
-    plt.xlabel("Event ID")
+    #print(df)
+    #df.set_index("id",inplace='true')#setting dataframe index to "id" column
+    #style.use('classic')
+    #(df.head(10))['mag'].plot()#Generating plot for first 100 'mag' data values. In the similar way plat can be generated for other columns also.
+    #plt.ylabel("Magnitude")
+    #plt.xlabel("Event ID")
+    #plt.show()
+
+    monthNames = ("Jan-2016", "Feb-2016", "Mar-2016", "Apr-2016", "May-2016", "Jun-2016", "Jul-2016", "Aug-2016", "Sep-2016", "Oct-2016", "Nov-2016", "Dec-2016","Jan-2017")
+    monthlyCountList =  []
+    monthWiseCountDict = {'Months':[],'Count':[]}#Initializing monthWiseCountDict data structure
+    for monthName in monthNames:
+        if monthName == None:
+            continue
+        monthlyTotal = 0
+        for index, row in df.iterrows():
+            dtObj = row['time']
+            if dtObj == None:
+                continue
+            if (monthName == monthNames[dtObj.month-1]) and (dtObj.year != 2017):
+                monthlyTotal = monthlyTotal + 1
+            elif (dtObj.year == 2017) and (dtObj.month == 1):#Special Handling for Jan-2017 records
+                monthlyTotal = monthlyTotal + 1
+
+        (monthWiseCountDict['Months']).append(monthName)
+        (monthWiseCountDict['Count']).append(monthlyTotal)
+
+    """
+    The following lines of code will create plot which will illustrate
+    the total no of Earthquake events where magnitude >= 6 registered by USGS for the perid
+    starting from 2016-01-01 to till date i.e. 13 months approx.
+    """
+    megDF = pd.DataFrame(monthWiseCountDict)
+    megDF.set_index('Months',inplace='true')
+    style.use('ggplot')
+    megDF.plot()
+    plt.xlabel('Months')
+    plt.ylabel('#earthquakes/month with magnitude >= {}'.format(MAGNITUDE_LCL))
+    plt.xticks([0,1,2,3,4,5,6,7,8,9,10,11,12],monthWiseCountDict['Months'])
     plt.show()
+
 finally:
-    print(" In finally block. Program culminated at {} ".format(dt.datetime.fromtimestamp(t.time())))
+    print("In finally block. Program culminated at {} ".format(dt.datetime.fromtimestamp(t.time())))
 
