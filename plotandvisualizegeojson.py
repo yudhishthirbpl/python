@@ -3,11 +3,13 @@ This module illustrates how to leverage popular python objects (i.e. datetime, r
 and data structures (i.e. list, dict, dataframes, pandas and custom class) to call JSON based
 rest web service and carry out some basic data visulization and plotting operations
 :Author: Yudhishthir Kaushik <yudhishthirbpl@hotmail.com>
+build on python 3.5.2 Anaconda distribution
 """
 
 # Imports section
 # All necessary Imports will be places here
 # Issue: os and json modules are required on ubuntu. On Windows code worked fine without these imports also.
+
 import requests
 import matplotlib.pyplot as plt
 import pandas as pd
@@ -177,7 +179,7 @@ else:
     df = pd.DataFrame(geoJSONDict.getMasterDataFrame())
     df.set_index("time",inplace='true')#setting dataframe index to "time" column
     style.use('fivethirtyeight')
-    (df.head(100))['mag'].plot()#Generating plot for first 100 'mag' data values. In the similar way plat can be generated for other columns also.
+    (df.head(20))['mag'].plot()#Generating plot for first 100 'mag' data values. In the similar way plat can be generated for other columns also.
     plt.ylabel("Magnitude")
     plt.show()
 finally:
