@@ -51,11 +51,11 @@ class GeoJSONDict:
     def setTime(self,timeObj):
         if timeObj == None:
             dtObj = dt.datetime.fromtimestamp(int(t.time()))
+            (self.__masterDataFrame['time']).append(dtObj)
         else:
             epochTS = float(timeObj) / 1000
             dtObj = dt.datetime.fromtimestamp(int(epochTS))#Not sure what would be the impact of missing tz >>> Todo
-            (self.__masterDataFrame['time']).append(dtObj);
-            #print(dtObj)
+            (self.__masterDataFrame['time']).append(dtObj)
 
     def setDepth(self,depth):
         (self.__masterDataFrame['depth']).append(depth)
@@ -102,7 +102,8 @@ def processGeometry(geometry,geoJSONDict):
 
 #To handle null values in GeoJSON response
 null = "null"
-MAGNITUDE_LCL = 3
+#Lower control limit for earthquake magnitude. Value of this variable will be used to filter data coming from USGS API
+MAGNITUDE_LCL = 6
 '''
 URL for accessing USGS data Services
 For now I am keeping the URL hardcoded but this can be dynamically creatd using datetime object
@@ -218,7 +219,7 @@ else:
     """
     megDF = pd.DataFrame(monthWiseCountDict)
     megDF.set_index('Months',inplace='true')
-    style.use('ggplot')
+    style.use('seaborn-bright')
     megDF.plot()
     plt.xlabel('Months')
     plt.ylabel('#earthquakes/month with magnitude >= {}'.format(MAGNITUDE_LCL))
