@@ -53,7 +53,8 @@ class GeoJSONDict:
             time = (int(t.time()))*1000
         epochTS = float(time) / 1000
         dtObj = dt.datetime.fromtimestamp(int(epochTS))#Not sure what would be the impact of missing tz >>> Todo
-        (self.__masterDataFrame['time']).append("{}-{}-{}".format(dtObj.year,dtObj.day,dtObj.month))
+        #(self.__masterDataFrame['time']).append("{}-{}-{}".format(dtObj.year,dtObj.day,dtObj.month))
+        (self.__masterDataFrame['time']).append(dtObj);
 
     def setDepth(self,depth):
         (self.__masterDataFrame['depth']).append(depth)
@@ -177,10 +178,11 @@ else:
     pass
     #Placeholder for code to generate plots using matplotlib.pyplot with by using dataframes and Pandas (if possible)
     df = pd.DataFrame(geoJSONDict.getMasterDataFrame())
-    df.set_index("time",inplace='true')#setting dataframe index to "time" column
-    style.use('fivethirtyeight')
-    (df.head(20))['mag'].plot()#Generating plot for first 100 'mag' data values. In the similar way plat can be generated for other columns also.
+    df.set_index("id",inplace='true')#setting dataframe index to "id" column
+    style.use('classic')
+    (df.head(10))['mag'].plot()#Generating plot for first 100 'mag' data values. In the similar way plat can be generated for other columns also.
     plt.ylabel("Magnitude")
+    plt.xlabel("Event ID")
     plt.show()
 finally:
     print(" In finally block. Program culminated at {} ".format(dt.datetime.fromtimestamp(t.time())))
