@@ -16,6 +16,7 @@ import pandas as pd
 import datetime as dt
 import time as t
 from matplotlib import style
+import numpy
 
 
 
@@ -29,12 +30,12 @@ class GeoJSONDict:
     so that it can be directly used to create visulization and plots using pandas and matplotlib
     """
     __masterDataFrame = {}
-    __columnNames = ("type","alert","mag","place","time","depth","id")
+    __columnNames = ("type","alert","mag","time","depth","id","felt","longitude","latitude")
 
     def __init__(self):
         #Initialize the Master Data Frame with Keys and Empty Lists
-        for columnName in self.__columnNames:
-            self.__masterDataFrame[columnName] = []
+        self.__masterDataFrame = {columnName: [] for columnName in self.__columnNames}
+
 
     def setType(self,type):
         (self.__masterDataFrame['type']).append(type)
@@ -63,6 +64,18 @@ class GeoJSONDict:
     def setId(self,id):
         (self.__masterDataFrame['id']).append(id)
 
+    def setFelt(self,felt):
+        if felt == None:
+            (self.__masterDataFrame['felt']).append(int('0'))
+        else:
+            (self.__masterDataFrame['felt']).append(int(felt))
+
+    def setLongitude(self,longitude):
+        (self.__masterDataFrame['longitude']).append(longitude)
+
+    def setLatitude(self,latitude):
+        (self.__masterDataFrame['latitude']).append(latitude)
+
     def getMasterDataFrame(self):
         return self.__masterDataFrame
 # --------------- Master Data Frame Object to store processed JSON Response  (End)
@@ -82,8 +95,8 @@ def processProperties(properties,geoJSONDict):
     geoJSONDict.setAlert(properties[PROPERTIES_ALERT_KEY_NAME])
     geoJSONDict.setType(properties[PROPERTIES_TYPE_KEY_NAME])
     geoJSONDict.setMag(properties[PROPERTIES_MAG_KEY_NAME])
-    geoJSONDict.setPlace(properties[PROPERTIES_PLACE_KEY_NAME])
     geoJSONDict.setTime(properties[PROPERTIES_TIME_KEY_NAME])
+    geoJSONDict.setFelt(properties[PROPERTIES_FELT_KEY_NAME])
     return geoJSONDict
 
 def processGeometry(geometry,geoJSONDict):
@@ -95,6 +108,8 @@ def processGeometry(geometry,geoJSONDict):
     """
     if (geometry == None) and (geometry[GEOMETRY_COORDINATES_KEY_NAME] == None):
         raise " Geometry > Coordinates object is Null, can't proceed ahead !!!! for recordId={} ".format(recordId)
+    geoJSONDict.setLongitude((geometry[GEOMETRY_COORDINATES_KEY_NAME])[2])
+    geoJSONDict.setLatitude((geometry[GEOMETRY_COORDINATES_KEY_NAME])[1])
     geoJSONDict.setDepth((geometry[GEOMETRY_COORDINATES_KEY_NAME])[2])#Within coordinates, depth value is avaialble at index=3 in the list
     return geoJSONDict
 # --------------- Util functions for processing JSON Response Object (End)
@@ -103,7 +118,7 @@ def processGeometry(geometry,geoJSONDict):
 #To handle null values in GeoJSON response
 null = "null"
 #Lower control limit for earthquake magnitude. Value of this variable will be used to filter data coming from USGS API
-MAGNITUDE_LCL = 6
+MAGNITUDE_LCL = 3
 '''
 URL for accessing USGS data Services
 For now I am keeping the URL hardcoded but this can be dynamically creatd using datetime object
@@ -125,8 +140,8 @@ PROPERTIES_KEY_NAME = "properties"
 PROPERTIES_ALERT_KEY_NAME = "alert"
 PROPERTIES_TYPE_KEY_NAME = "type"
 PROPERTIES_MAG_KEY_NAME = "mag"
-PROPERTIES_PLACE_KEY_NAME = "place"
 PROPERTIES_TIME_KEY_NAME = "time"
+PROPERTIES_FELT_KEY_NAME = "felt"
 GEOMETRY_COORDINATES_KEY_NAME = "coordinates"
 
 
@@ -185,7 +200,7 @@ except Exception as exception:
 else:
     #Placeholder for code to generate plots using matplotlib.pyplot with by using dataframes and Pandas (if possible)
     df = pd.DataFrame(geoJSONDict.getMasterDataFrame())
-    #print(df)
+    #print(df.head(20))
     #df.set_index("id",inplace='true')#setting dataframe index to "id" column
     #style.use('classic')
     #(df.head(10))['mag'].plot()#Generating plot for first 100 'mag' data values. In the similar way plat can be generated for other columns also.
@@ -193,6 +208,27 @@ else:
     #plt.xlabel("Event ID")
     #plt.show()
 
+    #for plotting correlation
+    corr_dict = {}
+    corr_dict['depth']=geoJSONDict.getMasterDataFrame()['depth']
+    #corr_dict['felt']=geoJSONDict.getMasterDataFrame()['felt']
+    corr_dict['mag']=geoJSONDict.getMasterDataFrame()['mag']
+
+    corr_df = pd.DataFrame(corr_dict)
+    #print(corr_df)
+
+    # corr_df.plot()
+    # plt.show()
+
+    x_labels = [num for num in range(1,1001)]
+    y_labels = [num for num in range(1,11)]
+
+    correlations = corr_df.corr()
+    correlations.plot()
+    plt.show()
+
+
+    """
     monthNames = ("Jan-2016", "Feb-2016", "Mar-2016", "Apr-2016", "May-2016", "Jun-2016", "Jul-2016", "Aug-2016", "Sep-2016", "Oct-2016", "Nov-2016", "Dec-2016","Jan-2017")
     monthlyCountList =  []
     monthWiseCountDict = {'Months':[],'Count':[]}#Initializing monthWiseCountDict data structure
@@ -212,11 +248,11 @@ else:
         (monthWiseCountDict['Months']).append(monthName)
         (monthWiseCountDict['Count']).append(monthlyTotal)
 
-    """
+
     The following lines of code will create plot which will illustrate
     the total no of Earthquake events where magnitude >= 6 registered by USGS for the perid
     starting from 2016-01-01 to till date i.e. 13 months approx.
-    """
+
     megDF = pd.DataFrame(monthWiseCountDict)
     megDF.set_index('Months',inplace='true')
     style.use('seaborn-bright')
@@ -225,6 +261,7 @@ else:
     plt.ylabel('#earthquakes/month with magnitude >= {}'.format(MAGNITUDE_LCL))
     plt.xticks([0,1,2,3,4,5,6,7,8,9,10,11,12],monthWiseCountDict['Months'])
     plt.show()
+    """
 
 finally:
     print("In finally block. Program culminated at {} ".format(dt.datetime.fromtimestamp(t.time())))
