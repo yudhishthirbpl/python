@@ -18,6 +18,7 @@ import time as t
 from matplotlib import style
 import numpy
 
+style.use('fivethirtyeight')
 
 
 # --------------- Master Data Frame Object to store processed JSON Response  (start)

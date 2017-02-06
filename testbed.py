@@ -1,7 +1,12 @@
+import numpy as np
+import pandas as pd
+import seaborn as sns
+import matplotlib.pyplot as plt
 import datetime as dt
 import time as t
 import matplotlib.pyplot as plt
 from matplotlib import style
+
 
 """
 Scratch pad for testing python functions and APIs
@@ -52,4 +57,12 @@ x_axis_label = ["{}-{}".format(temp_date.strftime('%b'),temp_date.year) for temp
 
 my_list = [(letter,num) for letter in 'abcd' if letter!='a' for num in range(4) if num%2 == 0]
 print(my_list)
+
+rs = np.random.RandomState(33)
+print(rs.normal(size=(100, 26)))
+
+
+import folium
+#folium.Map(location=[45.5236, -122.6750])
+#map_osm.create_map(path='osm.html')
 
